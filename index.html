@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080a07">
+  <meta name="description" content="HORNTYPE — 将任意文字转化为粗壮、紧凑、带牛角装饰的矢量艺术字。实时预览，导出高分辨率 PNG 与可编辑 SVG。">
+  <title>HORNTYPE — Vector Type Instrument</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23c8ff3e'/%3E%3Cpath d='M8 42C18 40 25 27 31 14c3 8 9 12 17 11 4 0 7-3 8-7 4 12-2 26-12 31-6 3-14 2-19-2l-3 8-7-2 4-11c-3-1-6-1-11 0Z' fill='%230a0c06'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-mode="wordmark">
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 44 44"><path d="M4 31c7-3 12-12 16-21 2 7 6 10 12 9 4 0 6-2 7-5 3 9-2 19-9 23-5 2-11 1-14-2l-2 6-5-2 3-8c-3-1-5-1-8 0Z"></path></svg>
+        </div>
+        <div class="brand-copy">
+          <span class="brand-name">HORNTYPE</span>
+          <span class="brand-sub">VECTOR TYPE INSTRUMENT</span>
+        </div>
+      </div>
+
+      <div class="mode-switch" role="tablist" aria-label="构图模式">
+        <button type="button" class="mode-btn is-active" data-mode="wordmark" role="tab" aria-selected="true">
+          <span class="mode-index">A</span> WORDMARK
+        </button>
+        <button type="button" class="mode-btn" data-mode="poster" role="tab" aria-selected="false">
+          <span class="mode-index">B</span> POSTER
+        </button>
+      </div>
+
+      <div class="top-actions">
+        <button type="button" class="tool-btn" id="resetBtn" title="恢复默认设置">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7.5A6.5 6.5 0 1 1 3.8 12M4 3v4.6h4.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span>重置</span>
+        </button>
+        <button type="button" class="tool-btn" id="randomBtn" title="随机生成一组视觉参数">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h2.2c3.8 0 5.6 10 9.6 10H17M3 15h2.2c1.6 0 2.8-1.8 4-4M12 5h5m-2.5-2.5L17 5l-2.5 2.5M12 15h5m-2.5-2.5L17 15l-2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span>随机</span>
+        </button>
+        <span class="top-divider" aria-hidden="true"></span>
+        <button type="button" class="export-btn export-btn--primary" id="exportPngTop">
+          <span>导出 PNG</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v9m0 0 3.3-3.3M8 10 4.7 6.7M2 12v2h12v-2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
+        <button type="button" class="export-btn" id="exportSvgTop">
+          <span>SVG</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v9m0 0 3.3-3.3M8 10 4.7 6.7M2 12v2h12v-2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" aria-label="设计参数">
+        <div class="sidebar-head">
+          <div>
+            <span class="micro-label">CONTROL SURFACE</span>
+            <strong>参数编辑</strong>
+          </div>
+          <span class="engine-state is-ready" id="engineState"><i></i> OUTLINES</span>
+        </div>
+
+        <div class="panel-scroll" id="panelScroll">
+
+          <details class="section" open="">
+            <summary>
+              <span class="section-num">01</span>
+              <span class="section-title">文字 <em>TEXT</em></span>
+              <span class="section-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="section-body">
+              <label class="field" for="textInput">
+                <span class="field-head"><span>内容 <em>CONTENT</em></span><span class="field-hint">实时渲染</span></span>
+                <textarea id="textInput" maxlength="120" rows="3" spellcheck="false" autocomplete="off" placeholder="TYPE ANYTHING">HORNTYPE</textarea>
+              </label>
+              <div class="field-meta">
+                <span id="charCount">8 CHARS / 1 LINE</span>
+                <span id="glyphWarn" class="warn-text"></span>
+              </div>
+
+              <div class="split-row">
+                <label class="switch-row" for="uppercaseToggle">
+                  <span class="switch"><input type="checkbox" id="uppercaseToggle" data-check="uppercase" checked=""><i></i></span>
+                  <span>大写转换 <em>UPPERCASE</em></span>
+                </label>
+                <div class="segmented segmented--compact" id="alignControl" role="group" aria-label="对齐方式">
+                  <button type="button" data-align="left" title="左对齐" aria-label="左对齐">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12M2 7h8M2 11h12M2 15h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                  </button>
+                  <button type="button" data-align="center" class="is-active" title="居中" aria-label="居中">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12M4 7h8M2 11h12M5 15h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                  </button>
+                  <button type="button" data-align="right" title="右对齐" aria-label="右对齐">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12M6 7h8M2 11h12M8 15h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="poster-only poster-text-fields">
+                <label class="field" for="subtitleInput">
+                  <span class="field-head"><span>副标题 <em>SUBTITLE</em></span></span>
+                  <input type="text" id="subtitleInput" maxlength="80" spellcheck="false" autocomplete="off" placeholder="AN EXPERIMENTAL TYPE PLAYGROUND" value="AN EXPERIMENTAL TYPE PLAYGROUND">
+                </label>
+                <label class="field" for="creditInput">
+                  <span class="field-head"><span>署名 <em>CREDIT</em></span></span>
+                  <input type="text" id="creditInput" maxlength="100" spellcheck="false" autocomplete="off" placeholder="HORNTYPE / VOL. 01 / 2026" value="HORNTYPE / VOL. 01 / 2026">
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="section poster-only" open="">
+            <summary>
+              <span class="section-num">02</span>
+              <span class="section-title">海报层级 <em>POSTER STACK</em></span>
+              <span class="section-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="section-body">
+              <div class="control">
+                <div class="control-head"><label for="subSizeInput">副标题字号 <em>SUB SIZE</em></label><output data-for="poster.subSize">26%</output></div>
+                <input type="range" id="subSizeInput" data-bind="poster.subSize" min="8" max="55" step="1" value="26" data-suffix="%" style="--fill: 38.297872340425535%;">
+              </div>
+              <div class="control">
+                <div class="control-head"><label for="creditSizeInput">署名字号 <em>CREDIT SIZE</em></label><output data-for="poster.creditSize">2.2%</output></div>
+                <input type="range" id="creditSizeInput" data-bind="poster.creditSize" min="1" max="6" step="0.1" value="2.2" data-suffix="%" data-precision="1" style="--fill: 24.000000000000004%;">
+              </div>
+              <div class="control">
+                <div class="control-head"><label for="gapInput">标题间距 <em>STACK GAP</em></label><output data-for="poster.gap">4%</output></div>
+                <input type="range" id="gapInput" data-bind="poster.gap" min="0" max="14" step="0.5" value="4" data-suffix="%" data-precision="1" style="--fill: 28.57142857142857%;">
+              </div>
+              <p class="section-note">主标题、副标题与署名使用同一对齐轴。切换回 WORDMARK 时海报层会隐藏，但参数会保留。</p>
+            </div>
+          </details>
+
+          <details class="section" open="">
+            <summary>
+              <span class="section-num">03</span>
+              <span class="section-title">字体系统 <em>TYPE SYSTEM</em></span>
+              <span class="section-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="section-body">
+              <div class="preset-grid" id="presetGrid">
+                <button type="button" class="preset-card is-active" data-preset="chunky">
+                  <span class="preset-glyph preset-glyph--bungee">CH</span>
+                  <span class="preset-meta"><strong>CHUNKY</strong><small>HEAVY / TIGHT</small></span>
+                  <span class="preset-check">01</span>
+                </button>
+                <button type="button" class="preset-card" data-preset="geometric">
+                  <span class="preset-glyph preset-glyph--archivo">GE</span>
+                  <span class="preset-meta"><strong>GEOMETRIC</strong><small>WIDE / PRECISE</small></span>
+                  <span class="preset-check">02</span>
+                </button>
+                <button type="button" class="preset-card" data-preset="distorted">
+                  <span class="preset-glyph preset-glyph--anton">DI</span>
+                  <span class="preset-meta"><strong>DISTORTED</strong><small>LOOSE / UNSTABLE</small></span>
+                  <span class="preset-check">03</span>
+                </button>
+                <button type="button" class="preset-card" data-preset="poster">
+                  <span class="preset-glyph preset-glyph--bowlby">PO</span>
+                  <span class="preset-meta"><strong>POSTER</strong><small>CHROMA / FAT</small></span>
+                  <span class="preset-check">04</span>
+                </button>
+              </div>
+              <p class="section-note">四套字形均以开源字体轮廓为骨架，再叠加字重、圆角、波动与切角处理。POSTER 使用 Bowlby One SC，以超粗字重和紧排靠近原海报的厚重感。所有输出均为矢量路径。</p>
+            </div>
+          </details>
+
+          <details class="section" open="">
+            <summary>
+              <span class="section-num">04</span>
+              <span class="section-title">字形控制 <em>LETTERFORM</em></span>
+              <span class="section-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="section-body">
+              <div class="control">
+                <div class="control-head"><label for="sizeInput">字号 <em>SIZE</em></label><output data-for="size">100%</output></div>
+                <input type="range" id="sizeInput" data-bind="size" min="30" max="100" step="1" value="100" data-suffix="%" style="--fill: 100%;">
+              </div>
+              <div class="control">
+                <div class="control-head"><label for="weightInput">字重 <em>WEIGHT</em></label><output data-for="weight">26</output></div>
+                <input type="range" id="weightInput" data-bind="weight" min="0" max="100" step="1" value="26" style="--fill: 26%;">
+              </div>
+              <div class="control">
+                <div class="control-head"><label for="trackingInput">字间距 <em>TRACKING</em></label><output data-for="tracking">-2.8%</output></div>
+                <input type="range" id="trackingInput" data-bind="tracking" min="-10" max="16" step="0.1" value="-2.8" data-suffix="%" data-precision="1" style="--fill: 27.692307692307693%;">
+              </div>
+              <div class="control-pair">
+                <div class="control">
+                  <div class="control-head"><label for="scaleXInput">水平缩放 <em>SCALE X</em></label><output data-for="scaleX">108%</output></div>
+                  <input type="range" id="scaleXInput" data-bind="scaleX" min="70" max="130" step="1" value="108" data-suffix="%" style="--fill: 63.33333333333333%;">
+                </div>
+                <div class="control">
+                  <div class="control-head"><label for="scaleYInput">垂直缩放 <em>SCALE Y</em></label><output data-for="scaleY">100%</output></div>
+                  <input type="range" id="scaleYInput" data-bind="scaleY" min="70" max="130" step="1" value="100" data-suffix="%" style="--fill: 50%;">
+                </div>
+              </div>
+              <div class="control">
+                <div class="control-head"><label for="roundnessInput">圆角程度 <em>ROUNDNESS</em></label><output data-for="roundness">84</output></div>
+                <input type="range" id="roundnessInput" data-bind="roundness" min="0" max="100" step="1" value="84" style="--fill: 84%;">
+              </div>
+              <div class="control">
+                <div class="control-head"><label for="distortInput">变形程度 <em>DISTORT</em></label><output data-for="distort">8</output></div>
+                <input type="range" id="distortInput" data-bind="distort" min="0" max="100" step="1" value="8" style="--fill: 8%;">
+              </div>
+            </div>
+          </details>
+
+          <details class="section" open="">
+            <summary>
+              <span class="section-num">05</span>
+              <span class="section-title">牛角装饰 <em>HORN ORNAMENT</em></span>
+              <span class="section-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="section-body">
+              <label class="switch-row switch-row--wide" for="hornToggle">
+                <span class="switch"><input type="checkbox" id="hornToggle" data-check="horn.enabled" checked=""><i></i></span>
+                <span>启用装饰 <em>HORN SYSTEM</em></span>
+              </label>
+
+              <div class="segmented" id="sideControl" role="group" aria-label="装饰位置">
+                <button type="button" data-side="left">左侧 LEFT</button>
+                <button type="button" data-side="both" class="is-active">两侧 BOTH</button>
+                <button type="button" data-side="right">右侧 RIGHT</button>
+              </div>
+
+              <div class="horn-style-grid" id="hornStyleGrid">
+                <button type="button" class="horn-style is-active" data-horn-style="bull">
+                  <svg viewBox="0 0 120 60" aria-hidden="true"><path d="M8 44C24 38 38 24 50 8c5 12 17 18 34 16 10-1 17-7 20-16 7 18-2 39-17 46-9 4-20 3-27-3l-3 9-10-4 5-15c-8-1-14 0-22 5Z" fill="currentColor"></path></svg>
+                  <span>牛角 <small>BULL</small></span>
+                </button>
+                <button type="button" class="horn-style" data-horn-style="hook">
+                  <svg viewBox="0 0 120 60" aria-hidden="true"><path d="M7 46C26 44 37 31 52 15c13-14 36-16 48-3 10 12 1 29-14 27-10-1-15-11-9-20 5-8 18-8 24 0 8 11 3 26-11 32-9 4-20 3-28-3l-2 8-10-3 4-14c-14 1-26-1-37 3Z" fill="currentColor"></path></svg>
+                  <span>弯钩 <small>HOOK</small></span>
+                </button>
+                <button type="button" class="horn-style" data-horn-style="blade">
+                  <svg viewBox="0 0 120 60" aria-hidden="true"><path d="M7 44 23 17l19 12L59 3l11 26 25-20-2 30 20-6-13 24-25 1-9 12-8-13-25 4-9-6Z" fill="currentColor"></path></svg>
+                  <span>尖刺 <small>BLADE</small></span>
+                </button>
+              </div>
+
+              <div class="control">
+                <div class="control-head"><label for="hornSizeInput">装饰尺寸 <em>SIZE</em></label><output data-for="horn.size">112%</output></div>
+                <input type="range" id="hornSizeInput" data-bind="horn.size" min="0" max="160" step="1" value="112" data-suffix="%" style="--fill: 70%;">
+              </div>
+              <div class="control-pair">
+                <div class="control">
+                  <div class="control-head"><label for="hornAngleInput">角度 <em>ANGLE</em></label><output data-for="horn.angle">0°</output></div>
+                  <input type="range" id="hornAngleInput" data-bind="horn.angle" min="-60" max="60" step="1" value="0" data-suffix="°" style="--fill: 50%;">
+                </div>
+                <div class="control">
+                  <div class="control-head"><label for="hornCurlInput">弯曲 <em>CURL</em></label><output data-for="horn.curl">55</output></div>
+                  <input type="range" id="hornCurlInput" data-bind="horn.curl" min="0" max="100" step="1" value="55" style="--fill: 55.00000000000001%;">
+                </div>
+              </div>
+              <div class="control-pair">
+                <div class="control">
+                  <div class="control-head"><label for="hornOffsetXInput">外扩 <em>GAP</em></label><output data-for="horn.offsetX">0%</output></div>
+                  <input type="range" id="hornOffsetXInput" data-bind="horn.offsetX" min="-40" max="60" step="1" value="0" data-suffix="%" style="--fill: 40%;">
+                </div>
+                <div class="control">
+                  <div class="control-head"><label for="hornOffsetYInput">上下 <em>POS Y</em></label><output data-for="horn.offsetY">0%</output></div>
+                  <input type="range" id="hornOffsetYInput" data-bind="horn.offsetY" min="-60" max="60" step="1" value="0" data-suffix="%" style="--fill: 50%;">
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="section" open="">
+            <summary>
+              <span class="section-num">06</span>
+              <span class="section-title">颜色 <em>COLOUR</em></span>
+              <span class="section-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="section-body">
+              <div class="palette-row" id="paletteRow" aria-label="预设配色"></div>
+              <div class="color-grid">
+                <label class="color-field" for="textColorInput">
+                  <span>文字 <em>TEXT</em></span>
+                  <span class="color-control">
+                    <input type="color" id="textColorInput" data-color="text" value="#000000">
+                    <input class="hex-input" type="text" id="textColorHex" value="#000000" maxlength="7" spellcheck="false" aria-label="文字颜色 HEX">
+                  </span>
+                </label>
+                <label class="color-field" for="bgColorInput">
+                  <span>背景 <em>BG</em></span>
+                  <span class="color-control">
+                    <input type="color" id="bgColorInput" data-color="bg" value="#0a923e">
+                    <input class="hex-input" type="text" id="bgColorHex" value="#0A923E" maxlength="7" spellcheck="false" aria-label="背景颜色 HEX">
+                  </span>
+                </label>
+                <label class="color-field" for="decoColorInput">
+                  <span>装饰 <em>DECO</em></span>
+                  <span class="color-control">
+                    <input type="color" id="decoColorInput" data-color="deco" value="#000000">
+                    <input class="hex-input" type="text" id="decoColorHex" value="#000000" maxlength="7" spellcheck="false" aria-label="装饰颜色 HEX">
+                  </span>
+                </label>
+              </div>
+              <div class="color-tools">
+                <button type="button" class="color-tool" id="swapColors">↔ 交换文字 / 背景</button>
+                <span class="color-hint">支持色盘、HEX 与 12 组预设</span>
+              </div>
+              <div class="control">
+                <div class="control-head"><label for="bgAlphaInput">背景透明度 <em>BG OPACITY</em></label><output data-for="colors.bgAlpha">100%</output></div>
+                <input type="range" id="bgAlphaInput" data-bind="colors.bgAlpha" min="0" max="100" step="1" value="100" data-suffix="%" style="--fill: 100%;">
+              </div>
+              <label class="switch-row" for="transparentToggle">
+                <span class="switch"><input type="checkbox" id="transparentToggle" data-check="transparent"><i></i></span>
+                <span>透明背景 <em>TRANSPARENT</em></span>
+              </label>
+            </div>
+          </details>
+
+          <details class="section" open="">
+            <summary>
+              <span class="section-num">07</span>
+              <span class="section-title">画布与位置 <em>CANVAS</em></span>
+              <span class="section-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="section-body">
+              <div class="segmented" id="ratioControl" role="group" aria-label="画布比例">
+                <button type="button" data-ratio="1:1" class="is-active">1:1</button>
+                <button type="button" data-ratio="16:9">16:9</button>
+                <button type="button" data-ratio="3:2">3:2</button>
+                <button type="button" data-ratio="custom">CUSTOM</button>
+              </div>
+
+              <div class="dimension-row">
+                <label class="dimension-field" for="widthInput"><span>宽 <em>W</em></span><input type="number" id="widthInput" min="600" max="2400" step="10" value="1600"></label>
+                <span class="dimension-x">×</span>
+                <label class="dimension-field" for="heightInput"><span>高 <em>H</em></span><input type="number" id="heightInput" min="600" max="2400" step="10" value="1600"></label>
+              </div>
+
+              <div class="control">
+                <div class="control-head"><label for="offsetXInput">水平位置 <em>POSITION X</em></label><output data-for="offsetX">0%</output></div>
+                <input type="range" id="offsetXInput" data-bind="offsetX" min="-30" max="30" step="1" value="0" data-suffix="%" style="--fill: 50%;">
+              </div>
+              <div class="control">
+                <div class="control-head"><label for="offsetYInput">垂直位置 <em>POSITION Y</em></label><output data-for="offsetY">0%</output></div>
+                <input type="range" id="offsetYInput" data-bind="offsetY" min="-30" max="30" step="1" value="0" data-suffix="%" style="--fill: 50%;">
+              </div>
+              <p class="section-note">也可以在右侧预览中直接拖动文字与装饰。画布最大 2400 × 2400，PNG 导出会自动限制在安全的像素范围内。</p>
+            </div>
+          </details>
+
+          <div class="sidebar-foot">
+            <span>LOCAL SESSION</span>
+            <span>SVG / PNG</span>
+            <span>NO UPLOAD</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="stage" aria-label="实时预览">
+        <div class="stage-bar">
+          <div class="stage-meta">
+            <span class="live-pill"><i></i> LIVE</span>
+            <span class="stage-mode" id="stageMode">WORDMARK</span>
+            <span class="stage-dim" id="dimensionChip">1600 × 1600</span>
+          </div>
+          <div class="zoom-controls">
+            <button type="button" class="zoom-btn" id="zoomOut" aria-label="缩小预览">−</button>
+            <span class="zoom-label" id="zoomLabel">17%</span>
+            <button type="button" class="zoom-btn" id="zoomIn" aria-label="放大预览">+</button>
+            <button type="button" class="zoom-fit" id="zoomFit">FIT</button>
+          </div>
+        </div>
+
+        <div class="stage-viewport" id="viewport">
+          <div class="stage-grid" aria-hidden="true"></div>
+          <div class="canvas-shell" id="canvasShell" aria-label="画布，可拖动文字位置" style="width: 264px; height: 264px;">
+            <div class="checkerboard" id="checkerboard" aria-hidden="true"></div>
+            <div class="canvas-mount" id="canvasMount"></div>
+            <div class="canvas-caption" aria-hidden="true">
+              <span class="caption-dot"></span> DRAG TO POSITION
+            </div>
+          </div>
+          <div class="empty-state" id="emptyState" hidden="">
+            <span class="empty-kicker">EMPTY CANVAS</span>
+            <strong>输入文字开始<br>设计字形</strong>
+            <span class="empty-sub">TYPE SOMETHING TO BEGIN</span>
+          </div>
+        </div>
+
+        <div class="stage-foot">
+          <span><i class="foot-dot"></i> VECTOR OUTLINE ENGINE</span>
+          <span id="fitStatus">AUTO-FIT 208PX · 1 LINE</span>
+          <span>HORN SYSTEM / V1.0</span>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="export-dialog" id="exportDialog">
+    <div class="export-card">
+      <div class="export-head">
+        <div>
+          <span class="micro-label">OUTPUT STATION</span>
+          <h2>导出作品</h2>
+        </div>
+        <button type="button" class="dialog-close" id="dialogClose" aria-label="关闭导出面板">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+        </button>
+      </div>
+
+      <div class="export-tabs" role="tablist" aria-label="导出格式">
+        <button type="button" class="export-tab is-active" data-format="png" role="tab" aria-selected="true">PNG <small>RASTER</small></button>
+        <button type="button" class="export-tab" data-format="svg" role="tab" aria-selected="false">SVG <small>VECTOR</small></button>
+      </div>
+
+      <div class="export-body">
+        <div id="pngOptions">
+          <div class="export-block">
+            <div class="export-label"><span>导出倍率 <em>SCALE</em></span><span class="export-live" id="scaleReadout">2×</span></div>
+            <div class="scale-chips" id="scaleChips">
+              <button type="button" data-scale="1">1×</button>
+              <button type="button" data-scale="2" class="is-active">2×</button>
+              <button type="button" data-scale="3">3×</button>
+              <button type="button" data-scale="4">4×</button>
+            </div>
+            <div class="custom-scale">
+              <label for="scaleInput">自定义倍率</label>
+              <input type="number" id="scaleInput" min="1" max="4" step="0.5" value="2">
+            </div>
+          </div>
+
+          <label class="switch-row switch-row--boxed" for="exportTransparent">
+            <span class="switch"><input type="checkbox" id="exportTransparent"><i></i></span>
+            <span>透明背景 <em>ALPHA CHANNEL</em></span>
+          </label>
+
+          <div class="export-readout">
+            <span>输出尺寸 <em>DIMENSIONS</em></span>
+            <strong id="exportDimensions">3200 × 3200 px</strong>
+          </div>
+          <p class="export-note" id="exportNote">文字已转为轮廓，PNG 与预览使用同一份 SVG 绘制结果。</p>
+        </div>
+
+        <div id="svgOptions" hidden="">
+          <div class="vector-callout">
+            <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 30 17 8l7 13 4-7 5 16H7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path><path d="M7 34h26" stroke="currentColor" stroke-width="2"></path></svg>
+            <div>
+              <strong>完全矢量输出</strong>
+              <p>文字、装饰与背景均保留为独立 SVG 图层。字体已转为路径，不依赖本机字体，可直接进入 Illustrator、Figma 或 Affinity 继续编辑。</p>
+            </div>
+          </div>
+          <div class="export-readout">
+            <span>画板尺寸 <em>ARTBOARD</em></span>
+            <strong id="svgDimensions">1600 × 1600 px</strong>
+          </div>
+          <p class="export-note">背景透明时，SVG 中不会写入背景矩形；保留透明度，方便叠加到其他设计上。</p>
+        </div>
+
+        <p class="export-error" id="exportError" hidden=""></p>
+      </div>
+
+      <div class="export-foot">
+        <span class="export-format-state" id="exportFormatState">PNG / 2×</span>
+        <div class="export-actions">
+          <button type="button" class="btn-ghost" id="dialogCancel">取消</button>
+          <button type="button" class="btn-download" id="downloadBtn">
+            <span id="downloadLabel">下载 PNG</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v9m0 0 3.3-3.3M8 10 4.7 6.7M2 12v2h12v-2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="loader" id="loader">
+    <div class="loader-inner">
+      <div class="loader-mark" aria-hidden="true">
+        <svg viewBox="0 0 44 44"><path d="M4 31c7-3 12-12 16-21 2 7 6 10 12 9 4 0 6-2 7-5 3 9-2 19-9 23-5 2-11 1-14-2l-2 6-5-2 3-8c-3-1-5-1-8 0Z"></path></svg>
+      </div>
+      <div class="loader-title">HORNTYPE</div>
+      <div class="loader-sub">VECTOR TYPE INSTRUMENT</div>
+      <div class="loader-track"><i id="loaderBar" style="width: 0%;"></i></div>
+      <div class="loader-meta"><span id="loaderStatus">LOADING FONTS</span><span id="loaderPct">0%</span></div>
+      <div class="loader-error" id="loaderError" hidden="">
+        <strong>字体加载失败</strong>
+        <p>请通过本地服务器打开项目（不要直接双击 HTML 文件）。终端运行 <code>python -m http.server 4173</code>，然后访问 <code>http://127.0.0.1:4173</code>。</p>
+        <button type="button" id="retryLoad">重新加载</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <noscript>
+    <div class="noscript">HORNTYPE 需要启用 JavaScript 才能生成矢量字形。</div>
+  </noscript>
+
+  <script src="vendor/opentype.min.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+
+
+</body></html>
