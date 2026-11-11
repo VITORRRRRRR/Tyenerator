@@ -1,4 +1,4 @@
-# HORNTYPE — Vector Type Instrument
+# Tyler, the generator
 
 一个纯前端、零构建的**艺术字体图片生成器**。输入任意英文单词、短语或多行标题，实时生成粗壮、紧凑、几何化的矢量字标，并在文字两端合成牛角状装饰。可导出透明 / 高分辨率 PNG 与可继续编辑的 SVG。
 
