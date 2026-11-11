@@ -229,6 +229,66 @@
 
   /* ------------------------------------------------------------ line layout */
 
+  function cubicAt(p0, p1, p2, p3, t) {
+    const mt = 1 - t;
+    return mt * mt * mt * p0 + 3 * mt * mt * t * p1 +
+      3 * mt * t * t * p2 + t * t * t * p3;
+  }
+
+  // Find the outer ink edge near the top of a glyph. A plain bbox corner is
+  // usually outside the actual letter on round forms such as O/C, which makes
+  // a horn look detached. Sampling the contour near the cap line gives the
+  // horn root a real piece of letter to grow out of.
+  function pathTopAnchor(path, bb, side) {
+    if (!path || !bb) {
+      return { x: side === 'left' ? (bb ? bb.x1 : 0) : (bb ? bb.x2 : 0), y: bb ? bb.y1 : 0 };
+    }
+    const band = Math.max(0.5, (bb.y2 - bb.y1) * 0.18);
+    const ceiling = bb.y1 + band;
+    let best = null;
+    let px = 0;
+    let py = 0;
+
+    function consider(x, y) {
+      if (!Number.isFinite(x) || !Number.isFinite(y) || y > ceiling) return;
+      if (!best || (side === 'left' ? x < best.x : x > best.x)) {
+        best = { x, y };
+      }
+    }
+
+    for (let i = 0; i < path.commands.length; i++) {
+      const c = path.commands[i];
+      if (c.type === 'M' || c.type === 'L') {
+        consider(c.x, c.y);
+        px = c.x;
+        py = c.y;
+      } else if (c.type === 'C') {
+        for (let s = 1; s <= 4; s++) {
+          const t = s / 4;
+          consider(
+            cubicAt(px, c.x1, c.x2, c.x, t),
+            cubicAt(py, c.y1, c.y2, c.y, t)
+          );
+        }
+        px = c.x;
+        py = c.y;
+      } else if (c.type === 'Q') {
+        for (let s = 1; s <= 4; s++) {
+          const t = s / 4;
+          const mt = 1 - t;
+          consider(
+            mt * mt * px + 2 * mt * t * c.x1 + t * t * c.x,
+            mt * mt * py + 2 * mt * t * c.y1 + t * t * c.y
+          );
+        }
+        px = c.x;
+        py = c.y;
+      }
+    }
+
+    return best || { x: side === 'left' ? bb.x1 : bb.x2, y: bb.y1 };
+  }
+
   function buildLine(font, text, fontSize, trackingEm, distort, seed, lineIndex) {
     const scale = fontSize / font.unitsPerEm;
     const d = clamp(distort, 0, 100) / 100;
@@ -261,6 +321,8 @@
             index: i,
             d: dPath,
             box: bb,
+            topLeft: pathTopAnchor(path, bb, 'left'),
+            topRight: pathTopAnchor(path, bb, 'right'),
             clipD: null
           });
           box = unionBox(box, bb);
@@ -414,6 +476,17 @@
     for (let i = segments; i >= 0; i--) {
       d += ' L ' + num(right[i][0]) + ' ' + num(right[i][1]);
     }
+
+    // A small inward foot bridges the angled root cut into the cap. It sits
+    // behind the glyph and is biased toward the text side, so it closes the
+    // notch without creating a visible sideburn outside the letter.
+    const footInner = { x: -baseWidth * 0.28, y: baseWidth * 0.46 };
+    const footOuter = { x: baseWidth * 0.06, y: baseWidth * 0.42 };
+    d += ' L ' + num(footInner.x) + ' ' + num(footInner.y);
+    d += ' L ' + num(footOuter.x) + ' ' + num(footOuter.y);
+    d += ' C ' + num(baseWidth * 0.26) + ' ' + num(baseWidth * 0.30) + ' ' +
+      num(baseWidth * 0.40) + ' ' + num(baseWidth * 0.14) + ' ' +
+      num(left[0][0]) + ' ' + num(left[0][1]);
     return d + ' Z';
   }
 
@@ -591,10 +664,26 @@
       return (maxWidth - width) / 2;
     });
 
+    const widestOffset = lineOffsets[widestIndex];
+    const firstGlyph = widest.line.glyphs.length ? widest.line.glyphs[0] : null;
+    const lastGlyph = widest.line.glyphs.length
+      ? widest.line.glyphs[widest.line.glyphs.length - 1]
+      : null;
+    const rootInset = fontSize * 0.012;
+    const rootDrop = fontSize * 0.008;
+    const leftAnchorX = firstGlyph
+      ? textLeft + (widestOffset + firstGlyph.topLeft.x + rootInset) * scaleX
+      : textLeft;
+    const rightAnchorX = lastGlyph
+      ? textLeft + (widestOffset + lastGlyph.topRight.x - rootInset) * scaleX
+      : textLeft + textWidth;
+    const leftAnchorY = originY + ((firstGlyph ? firstGlyph.topLeft.y : (widest.line.box ? widest.line.box.y1 : 0)) + widest.baseline) * scaleY;
+    const rightAnchorY = originY + ((lastGlyph ? lastGlyph.topRight.y : (widest.line.box ? widest.line.box.y1 : 0)) + widest.baseline) * scaleY;
+
     const hornAnchors = {
-      left: textLeft + HORN_OVERLAP * hornS,
-      right: textLeft + textWidth - HORN_OVERLAP * hornS,
-      y: originY + widestTopRel + HORN_TOP_OVERLAP * hornS
+      left: leftAnchorX,
+      right: rightAnchorX,
+      y: Math.max(leftAnchorY, rightAnchorY) + rootDrop
         + (state.horn.offsetY / 100) * (cap * fontSize * scaleY * 0.6)
     };
 
